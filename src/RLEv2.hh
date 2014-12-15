@@ -16,31 +16,26 @@
 * limitations under the License.
 */
 
-#include "RLEs.hh"
-#include "RLEv1.hh"
-#include "RLEv2.hh"
-#include "Exceptions.hh"
+#ifndef ORC_RLEV2_HH
+#define ORC_RLEV2_HH
+
+#include "RLE.hh"
 
 namespace orc {
 
-RleDecoder::~RleDecoder() {
-  // PASS
-}
+class PositionProvider;
 
-std::unique_ptr<RleDecoder> createRleDecoder(
-    std::unique_ptr<SeekableInputStream> input,
-    bool isSigned,
-    RleVersion version) {
-  switch (version) {
-    case RleVersion_1:
-      // We don't have std::make_unique() yet.
-      return std::unique_ptr<RleDecoder>(new RleDecoderV1(std::move(input), 
-                                                          isSigned));
-    case RleVersion_2:
-    default:
-      // TODO(seharris): Instantiate an RleDecoderV2 here.
-      throw NotImplementedYet("Not implemented yet");
-  }
-}
+class RleDecoderV2 : public RleDecoder {
+public:
+  void seek(PositionProvider& provider) override;
+
+  void skip(size_t numValues) override;
+
+  void next(long* data, size_t numValues, const char* notNull) override;
+
+private:
+};
 
 }  // namespace orc
+
+#endif  // ORC_RLEV2_HH

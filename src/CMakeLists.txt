@@ -34,6 +34,7 @@ add_library (orc STATIC
   OrcFile.cc
   Reader.cc
   RLEv1.cc
+  RLEv2.cc
   RLEs.cc
   TypeImpl.cc
   Vector.cc
