@@ -240,12 +240,13 @@ namespace orc {
                                      (stream->getLength()));
 
     //read last bytes into buffer to get PostScript
-    unsigned long readSize = std::min(size, DIRECTORY_SIZE_GUESS);
-    std::unique_ptr<char[]> buffer = 
-      std::unique_ptr<char[]>(new char[readSize]);
-    stream->read(buffer.get(), size - readSize, readSize);
-    readPostscript(buffer.get(), readSize);
-    readFooter(buffer.get(), readSize, size);
+    {
+      const size_t readSize = std::min(size, DIRECTORY_SIZE_GUESS);
+      std::unique_ptr<char[]> buffer(new char[readSize]);
+      stream->read(buffer.get(), size - readSize, readSize);
+      readPostscript(buffer.get(), readSize);
+      readFooter(buffer.get(), readSize, size);
+    }
 
     currentStripe = 0;
     currentRowInStripe = 0;

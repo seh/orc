@@ -46,12 +46,11 @@ namespace orc {
     if (decoder) {
       // page through the values that we want to skip
       // and count how many are non-null
-      unsigned long bufferSize = std::min(32768UL, numValues);
-      char* buffer = new char[bufferSize];
-      unsigned long remaining = numValues;
-      while (remaining > 0) {
-        unsigned long chunkSize = std::min(remaining, bufferSize);
-        decoder->next(buffer, chunkSize, 0);
+      const size_t bufferSize = std::min(32768UL, numValues);
+      std::unique_ptr<char[]> buffer(new char[bufferSize]);
+      for(size_t remaining = numValues; remaining > 0;) {
+        const size_t chunkSize = std::min(remaining, bufferSize);
+        decoder->next(buffer.get(), chunkSize, nullptr);
         remaining -= chunkSize;
         for(unsigned long i=0; i < chunkSize; ++i) {
           if (!buffer[i]) {
@@ -132,7 +131,7 @@ namespace orc {
                                  char *notNull) {
     ColumnReader::next(rowBatch, numValues, notNull);
     rle->next(dynamic_cast<LongVectorBatch&>(rowBatch).data.get(),
-              numValues, rowBatch.hasNulls ? rowBatch.notNull.get() : 0);
+              numValues, rowBatch.hasNulls ? rowBatch.notNull.get() : nullptr);
   }
 
   class StringDictionaryColumnReader: public ColumnReader {
@@ -192,7 +191,7 @@ namespace orc {
                        false, rleVersion);
     dictionaryOffset = std::unique_ptr<long[]>(new long[dictionaryCount+1]);
     long* lengthArray = dictionaryOffset.get();
-    lengthDecoder->next(lengthArray + 1, dictionaryCount, 0);
+    lengthDecoder->next(lengthArray + 1, dictionaryCount, nullptr);
     lengthArray[0] = 0;
     for(unsigned int i=1; i < dictionaryCount + 1; ++i) {
       lengthArray[i] += lengthArray[i-1];
@@ -310,8 +309,9 @@ namespace orc {
       dynamic_cast<StructVectorBatch&>(rowBatch).fields.get();
     for(unsigned int i=0; i < subtypeCount; ++i) {
       children.get()[i].get()->next(*(childBatch[i]), numValues,
-                                    rowBatch.hasNulls ? 
-                                    rowBatch.notNull.get(): 0);
+                                    rowBatch.hasNulls
+                                    ? rowBatch.notNull.get()
+                                    : nullptr);
     }
   }
 
