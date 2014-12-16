@@ -55,55 +55,56 @@ namespace orc {
   /**
    * Create a seekable input stream based on a memory range.
    */
-  class SeekableArrayInputStream: public SeekableInputStream {
+  class SeekableArrayInputStream : public SeekableInputStream {
   private:
     std::vector<char> ownedData;
-    char* data;
-    unsigned long length;
-    unsigned long position;
-    unsigned long blockSize;
+    const char* const data;
+    const size_t length;
+    const size_t blockSize;
+    std::streamoff position;
 
   public:
     SeekableArrayInputStream(std::initializer_list<unsigned char> list,
                              long block_size = -1);
-    SeekableArrayInputStream(char* list,
-                             unsigned long length,
+    SeekableArrayInputStream(const char* list,
+                             size_t length,
                              long block_size = -1);
     virtual ~SeekableArrayInputStream();
-    virtual bool Next(const void** data, int*size) override;
-    virtual void BackUp(int count) override;
-    virtual bool Skip(int count) override;
-    virtual google::protobuf::int64 ByteCount() const override;
-    virtual void seek(PositionProvider& position) override;
-    virtual std::string getName() const override;
+
+    bool Next(const void** data, int* size) override;
+    void BackUp(int count) override;
+    bool Skip(int count) override;
+    google::protobuf::int64 ByteCount() const override;
+    void seek(PositionProvider& position) override;
+    std::string getName() const override;
   };
 
   /**
    * Create a seekable input stream based on an input stream.
    */
-  class SeekableFileInputStream: public SeekableInputStream {
+  class SeekableFileInputStream : public SeekableInputStream {
   private:
-    InputStream* input;
-    std::unique_ptr<char[]> buffer;
-    unsigned long offset;
-    unsigned long length;
-    unsigned long position;
-    unsigned long blockSize;
-    unsigned long remainder;
+    InputStream* const input;
+    const std::streamsize length;
+    const size_t blockSize;
+    const std::unique_ptr<char[]> buffer;
+    const std::streamoff offset;
+    std::streamoff position;
+    size_t remainder;
 
   public:
     SeekableFileInputStream(InputStream* input,
-                            unsigned long offset,
-                            unsigned long length,
-                            long blockSize = -1);
+                            std::streamoff offset,
+                            std::streamsize length,
+                            std::streamsize blockSize = -1);
     virtual ~SeekableFileInputStream();
 
-    virtual bool Next(const void** data, int*size) override;
-    virtual void BackUp(int count) override;
-    virtual bool Skip(int count) override;
-    virtual google::protobuf::int64 ByteCount() const override;
-    virtual void seek(PositionProvider& position) override;
-    virtual std::string getName() const override;
+    bool Next(const void** data, int* size) override;
+    void BackUp(int count) override;
+    bool Skip(int count) override;
+    google::protobuf::int64 ByteCount() const override;
+    void seek(PositionProvider& position) override;
+    std::string getName() const override;
   };
 
   /**
@@ -116,6 +117,7 @@ namespace orc {
      createCodec(CompressionKind kind,
                  std::unique_ptr<SeekableInputStream> input,
                  unsigned long bufferSize);
-}
+
+}  // namespace orc
 
 #endif

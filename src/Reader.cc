@@ -129,7 +129,7 @@ namespace orc {
     // PASS
   }
 
-  static const unsigned long DIRECTORY_SIZE_GUESS = 16 * 1024;
+  static const std::streamsize DIRECTORY_SIZE_GUESS = 16 * 1024;
 
   class ReaderImpl : public Reader {
   private:
@@ -235,15 +235,17 @@ namespace orc {
                          ): stream(std::move(input)), options(opts) {
     isMetadataLoaded = false;
     // figure out the size of the file using the option or filesystem
-    unsigned long size = std::min(options.getTailLocation(), 
-                                  static_cast<unsigned long>
-                                     (stream->getLength()));
+    const std::streamsize size =
+        std::min(options.getTailLocation(),
+                 static_cast<unsigned long>(stream->getLength()));
 
-    //read last bytes into buffer to get PostScript
+    // read last bytes into buffer to get PostScript
     {
-      const size_t readSize = std::min(size, DIRECTORY_SIZE_GUESS);
+      const std::streamsize readSize = std::min(size, DIRECTORY_SIZE_GUESS);
       std::unique_ptr<char[]> buffer(new char[readSize]);
-      stream->read(buffer.get(), size - readSize, readSize);
+      stream->read(buffer.get(),
+                   size - readSize,
+                   readSize);
       readPostscript(buffer.get(), readSize);
       readFooter(buffer.get(), readSize, size);
     }
