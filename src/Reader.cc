@@ -129,7 +129,7 @@ namespace orc {
     // PASS
   }
 
-  static const std::streamsize DIRECTORY_SIZE_GUESS = 16 * 1024;
+  static const unsigned long DIRECTORY_SIZE_GUESS = 16 * 1024;
 
   class ReaderImpl : public Reader {
   private:
@@ -231,17 +231,18 @@ namespace orc {
   };
 
   ReaderImpl::ReaderImpl(std::unique_ptr<InputStream> input,
-                         const ReaderOptions& opts
-                         ): stream(std::move(input)), options(opts) {
+                         const ReaderOptions& opts)
+      : stream(std::move(input)),
+        options(opts) {
     isMetadataLoaded = false;
     // figure out the size of the file using the option or filesystem
-    const std::streamsize size =
-        std::min(options.getTailLocation(),
-                 static_cast<unsigned long>(stream->getLength()));
+    const unsigned long size =
+            std::min(options.getTailLocation(),
+                     static_cast<unsigned long>(stream->getLength()));
 
     // read last bytes into buffer to get PostScript
     {
-      const std::streamsize readSize = std::min(size, DIRECTORY_SIZE_GUESS);
+      const unsigned long readSize = std::min(size, DIRECTORY_SIZE_GUESS);
       std::unique_ptr<char[]> buffer(new char[readSize]);
       stream->read(buffer.get(),
                    size - readSize,
@@ -259,7 +260,7 @@ namespace orc {
       rowTotal += footer.stripes(i).numberofrows();
     }
     selectedColumns.reset(new bool[footer.types_size()]);
-    memset(selectedColumns.get(), 0, 
+    memset(selectedColumns.get(), 0,
            static_cast<std::size_t>(footer.types_size()));
     for(int columnId: options.getInclude()) {
       selectTypeParent(columnId);
@@ -269,8 +270,8 @@ namespace orc {
     schema->assignIds(0);
     previousRow = std::numeric_limits<unsigned long>::max();
   }
-                         
-  CompressionKind ReaderImpl::getCompression() const { 
+
+  CompressionKind ReaderImpl::getCompression() const {
     return compression;
   }
 
@@ -410,13 +411,14 @@ namespace orc {
     if (tailSize > readSize) {
       throw NotImplementedYet("need more footer data.");
     }
-    std::unique_ptr<SeekableInputStream> pbStream =createCodec(compression,
-                          std::unique_ptr<SeekableInputStream>
-                          (new SeekableArrayInputStream(buffer +
-                                                        (readSize - tailSize),
-                                                        footerSize)),
-                          blockSize);
-    // TODO: do not SeekableArrayInputStream, rather use an array
+    std::unique_ptr<SeekableInputStream> pbStream(
+        createCodec(compression,
+                    std::unique_ptr<SeekableInputStream>(
+                        new SeekableArrayInputStream(buffer +
+                                                     (readSize - tailSize),
+                                                     footerSize)),
+                    blockSize));
+    // TODO: Do not use SeekableArrayInputStream; rather use an array.
 //    if (!footer.ParseFromArray(buffer+readSize-tailSize, footerSize)) {
     if (!footer.ParseFromZeroCopyStream(pbStream.get())) {
       throw ParseError("bad footer parse");
@@ -424,19 +426,20 @@ namespace orc {
     numberOfStripes = static_cast<unsigned long>(footer.stripes_size());
   }
 
-  proto::StripeFooter ReaderImpl::getStripeFooter
-                        (const proto::StripeInformation& info) {
-    unsigned long footerStart = info.offset() + info.indexlength() +
+  proto::StripeFooter ReaderImpl::getStripeFooter(
+      const proto::StripeInformation& info) {
+    const unsigned long footerStart = info.offset() + info.indexlength() +
       info.datalength();
-    unsigned long footerLength = info.footerlength();
-    std::unique_ptr<SeekableInputStream> pbStream = 
+    const unsigned long footerLength = info.footerlength();
+    std::unique_ptr<SeekableInputStream> pbStream(
       createCodec(compression,
-                  std::unique_ptr<SeekableInputStream>
-                  (new SeekableFileInputStream(stream.get(), footerStart,
-                                               footerLength, 
-                                               static_cast<long>(blockSize)
-                                               )),
-                  blockSize);
+                  std::unique_ptr<SeekableInputStream>(
+                      new SeekableFileInputStream(
+                          stream.get(),
+                          static_cast<std::streamoff>(footerStart),
+                          static_cast<std::streamsize>(footerLength),
+                          static_cast<std::streamsize>(blockSize))),
+                  blockSize));
     proto::StripeFooter result;
     if (!result.ParseFromZeroCopyStream(pbStream.get())) {
       throw ParseError(std::string("bad StripeFooter from ") + 
@@ -501,12 +504,12 @@ namespace orc {
       if (stream.kind() == kind && 
           stream.column() == static_cast<unsigned int>(columnId)) {
         return createCodec(reader.getCompression(),
-                           std::unique_ptr<SeekableInputStream>
-                           (new SeekableFileInputStream
-                            (&input,
-                             offset,
-                             stream.length(),
-                             static_cast<long>(reader.getCompressionSize()))),
+                           std::unique_ptr<SeekableInputStream>(
+                               new SeekableFileInputStream(
+                                   &input,
+                                   static_cast<std::streamoff>(offset),
+                                   static_cast<std::streamsize>(stream.length()),
+                                   static_cast<long>(reader.getCompressionSize()))),
                            reader.getCompressionSize());
       }
       offset += stream.length();

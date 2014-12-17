@@ -61,7 +61,7 @@ namespace orc {
     const char* const data;
     const size_t length;
     const size_t blockSize;
-    std::streamoff position;
+    size_t position;
 
   public:
     SeekableArrayInputStream(std::initializer_list<unsigned char> list,

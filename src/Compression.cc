@@ -68,7 +68,7 @@ namespace orc {
       : ownedData(values.size()),
         data(nullptr),
         length(values.size()),
-        blockSize(blkSize == -1 ? length : blkSize),
+        blockSize(blkSize < 0 ? length : static_cast<size_t>(blkSize)),
         position(0) {
     char *ptr = ownedData.data();
     for(const unsigned char ch : values) {
@@ -82,12 +82,12 @@ namespace orc {
       long blkSize)
       : data(values),
         length(size),
-        blockSize(blkSize == -1 ? length : blkSize),
+        blockSize(blkSize < 0 ? length : static_cast<size_t>(blkSize)),
         position(0) {
   }
 
   bool SeekableArrayInputStream::Next(const void** buffer, int* size) {
-    const std::streamsize currentSize = std::min(length - position, blockSize);
+    const size_t currentSize = std::min(length - position, blockSize);
     if (currentSize > 0) {
       *buffer = reinterpret_cast<const void*>(
           (data ? data : ownedData.data()) + position);
@@ -102,8 +102,8 @@ namespace orc {
   void SeekableArrayInputStream::BackUp(int count) {
     if (count >= 0) {
       if (static_cast<size_t>(count) <= blockSize
-          && count <= position) {
-        position -= count;
+          && static_cast<size_t>(count) <= position) {
+        position -= static_cast<size_t>(count);
       } else {
         throw std::logic_error("Can't backup that much!");
       }
@@ -112,9 +112,8 @@ namespace orc {
 
   bool SeekableArrayInputStream::Skip(int count) {
     if (count >= 0) {
-      unsigned long unsignedCount = static_cast<unsigned long>(count);
-      if (unsignedCount + position <= length) {
-        position += unsignedCount;
+      if (static_cast<size_t>(count) + position <= length) {
+        position += static_cast<size_t>(count);
         return true;
       } else {
         position = length;
@@ -165,8 +164,10 @@ namespace orc {
       *data = buffer.get();
       // read from the file, skipping over the remainder
       input->read(buffer.get() + remainder,
-                  offset + position + remainder,
-                  bytesRead - remainder);
+                  static_cast<size_t>(offset)
+                  + static_cast<size_t>(position)
+                  + remainder,
+                  static_cast<size_t>(bytesRead) - remainder);
       position += bytesRead;
       remainder = 0;
     }
@@ -200,7 +201,7 @@ namespace orc {
       return false;
     }
     if (remainder > static_cast<size_t>(count)) {
-      remainder -= count;
+      remainder -= static_cast<size_t>(count);
       memmove(buffer.get(), buffer.get() + count, remainder);
     } else {
       remainder = 0;
@@ -213,7 +214,7 @@ namespace orc {
   }
 
   void SeekableFileInputStream::seek(PositionProvider& location) {
-    position = location.next();
+    position = static_cast<std::streamoff>(location.next());
     if (position > length) {
       position = length;
       throw std::logic_error("seek too far");
