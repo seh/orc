@@ -20,6 +20,7 @@
 #define ORC_RLEV1_HH
 
 #include "RLE.hh"
+#include "wrap/zero-copy-stream-wrapper.h"
 
 #include <memory>
 
@@ -27,13 +28,10 @@ namespace orc {
 
 class RleDecoderV1 : public RleDecoder {
 public:
-    RleDecoderV1(std::unique_ptr<SeekableInputStream> input,
-                 bool isSigned);
+    typedef google::protobuf::io::ZeroCopyInputStream StreamT;
 
-    /**
-    * Seek to a particular spot.
-    */
-    void seek(PositionProvider&) override;
+    RleDecoderV1(std::unique_ptr<StreamT> input,
+                 bool isSigned);
 
     /**
     * Seek over a given number of values.
@@ -54,7 +52,7 @@ private:
 
     inline void skipLongs(unsigned long numValues);
 
-    const std::unique_ptr<SeekableInputStream> inputStream;
+    const std::unique_ptr<StreamT> inputStream;
     const bool isSigned;
     unsigned long remainingValues;
     long value;
@@ -63,6 +61,7 @@ private:
     int delta;
     bool repeating;
 };
+
 }  // namespace orc
 
 #endif  // ORC_RLEV1_HH

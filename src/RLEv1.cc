@@ -17,7 +17,6 @@
  */
 
 #include "RLEv1.hh"
-#include "Compression.hh"
 #include "Exceptions.hh"
 
 #include <algorithm>
@@ -84,24 +83,13 @@ void RleDecoderV1::readHeader() {
   }
 }
 
-RleDecoderV1::RleDecoderV1(std::unique_ptr<SeekableInputStream> input,
+RleDecoderV1::RleDecoderV1(std::unique_ptr<StreamT> input,
                            bool hasSigned)
     : inputStream(std::move(input)),
       isSigned(hasSigned),
       remainingValues(0),
       bufferStart(nullptr),
       bufferEnd(bufferStart) {
-}
-
-void RleDecoderV1::seek(PositionProvider& location) {
-  // move the input stream
-  inputStream->seek(location);
-  // force a re-read from the stream
-  bufferEnd = bufferStart;
-  // read a new header
-  readHeader();
-  // skip ahead the given number of records
-  skip(location.next());
 }
 
 void RleDecoderV1::skip(unsigned long numValues) {

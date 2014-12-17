@@ -19,22 +19,12 @@
 #ifndef ORC_RLE_HH
 #define ORC_RLE_HH
 
-#include <memory>
-
 namespace orc {
-
-class PositionProvider;
-class SeekableInputStream;
 
 class RleDecoder {
 public:
   // must be non-inline!
   virtual ~RleDecoder();
-
-  /**
-  * Seek to a particular spot.
-  */
-  virtual void seek(PositionProvider&) = 0;
 
   /**
   * Seek over a given number of values.
