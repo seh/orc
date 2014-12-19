@@ -45,7 +45,7 @@ namespace orc {
    * By extending Google's class, we get the ability to pass it directly
    * to the protobuf readers.
    */
-  class SeekableInputStream: public google::protobuf::io::ZeroCopyInputStream {
+  class SeekableInputStream : public google::protobuf::io::ZeroCopyInputStream {
   public:
     virtual ~SeekableInputStream();
     virtual void seek(PositionProvider& position) = 0;

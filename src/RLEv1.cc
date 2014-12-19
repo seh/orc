@@ -124,7 +124,7 @@ void RleDecoderV1::next(long* const data,
                         const unsigned long numValues,
                         const char* const notNull) {
   unsigned long position = 0;
-  const auto skipNulls =[&position, numValues, notNull] {
+  const auto skipNulls = [&position, numValues, notNull] {
     if (notNull) {
       // Skip over null values.
       while (position < numValues && !notNull[position]) {
